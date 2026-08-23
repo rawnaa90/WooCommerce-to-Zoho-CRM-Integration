@@ -1,12 +1,12 @@
 # WooCommerce to Zoho CRM Integration
 
-A local integration that automatically syncs WooCommerce order data into Zoho CRM, creating Contacts and Deals for every new order — with duplicate prevention and OAuth2-secured API access.
+**Task Submission** — Local integration between a WooCommerce store and Zoho CRM that automatically syncs customer order data as Contacts and Deals.
 
 ---
 
 ## 1. Project Overview
 
-This project connects a local WooCommerce store (running on WordPress via LocalWP) to Zoho CRM. When a customer places an order, a Node.js script fetches the order details from the WooCommerce REST API and pushes them into Zoho CRM: creating or reusing a **Contact** for the customer, and creating a **Deal** representing the order, linked to that Contact. The integration was built to demonstrate REST API integration, OAuth2 authentication, and data mapping between an e-commerce platform and a CRM — entirely with free, local tools.
+This project fulfills the assigned task: build a local integration between a WooCommerce store (WordPress, run locally) and Zoho CRM, so that customer order data is automatically sent from WooCommerce into the CRM as a Contact and a Deal. It was built entirely with free, local tools — LocalWP for WordPress hosting, the WooCommerce REST API, and the Zoho CRM REST API (v8) authenticated via OAuth2 — with no paid plugins, licenses, or external hosting.
 
 ## 2. Project Information
 
@@ -41,21 +41,17 @@ This project connects a local WooCommerce store (running on WordPress via LocalW
 
 ## 4. Integration Workflow
 
+Matches the required workflow from the task brief:
+
 1. A customer places an order on the local WooCommerce store.
-2. The script polls the WooCommerce REST API for new/recent orders (`status: processing, completed`).
-3. For each order, the script extracts:
+2. The script fetches the latest order details via the WooCommerce REST API, including:
    - Customer name and email
    - Products ordered
    - Order total
-4. The script authenticates with Zoho CRM using OAuth 2.0 and:
-   - Searches for an existing Contact by email
-     - If found → reuses the existing Contact
-     - If not found → creates a new Contact
-   - Checks whether a Deal already exists for that order number
-     - If it exists → skips it (prevents duplicates)
-     - If not → creates a new Deal with the order total and product names, linked to the Contact
-5. Results are logged to the console for each processed order.
-6. The Contact and Deal can then be verified directly in Zoho CRM.
+3. The script sends this data to the Zoho CRM API:
+   - Creates or updates a **Contact** (customer info) — searches by email first, reuses the existing Contact if found, otherwise creates a new one.
+   - Creates a new **Deal** with the order value and a title derived from the order/products, linked to that Contact.
+4. The result is verified by logging into Zoho CRM and checking that the Contact and Deal exist.
 
 ## 5. Project Structure
 
@@ -66,7 +62,7 @@ wc-zoho-integration/
 ├── .env.example           # Placeholder template for required variables
 ├── package.json
 ├── package-lock.json
-├── node_modules/
+├── node_modules/            # (not included in submission)
 ├── README.md
 └── screenshots/
     ├── woocommerce-order.png
@@ -75,21 +71,36 @@ wc-zoho-integration/
     └── zoho-deal.png
 ```
 
-## 6. Prerequisites
+## 6. Requirements
 
-- [LocalWP](https://localwp.com/) installed, with a local WordPress site running
-- WooCommerce plugin installed and activated on that site
-- At least 3 sample products and 2+ test orders created in WooCommerce
-- A Zoho account with access to Zoho CRM (Zoho One free trial or Zoho CRM free plan)
-- A registered OAuth2 Self Client in the [Zoho API Console](https://api-console.zoho.com/)
-- [Node.js](https://nodejs.org/) v18+ installed (developed on v26.7.0)
+Task requirements and how each was met:
+
+| Requirement | Status |
+|---|---|
+| Install LocalWP | ✅ Done |
+| Create a local WordPress site | ✅ Done — `wc-crm-demo.local` |
+| Install WooCommerce plugin | ✅ Done |
+| Add at least 3 sample products | ✅ Done |
+| Place 2 test orders as a dummy customer | ✅ Done — verified with orders #16–#18 |
+| Sign up for Zoho (Zoho One / Zoho CRM) | ✅ Done |
+| Use Zoho CRM API v8 | ✅ Done |
+| Authenticate using OAuth2 | ✅ Done — Self Client, refresh-token flow |
+| Use CRM modules: Contacts, Deals | ✅ Done |
+| Use WooCommerce REST API to read orders | ✅ Done |
+| Use CRM API to create/update Contacts and Deals | ✅ Done |
+| Verify result in the CRM | ✅ Done — confirmed in Contacts and Deals modules |
+
+Environment needed to run/re-test this submission:
+- [LocalWP](https://localwp.com/) with the local WordPress site running
+- WooCommerce plugin active, with sample products and test orders in place
+- A Zoho account with access to Zoho CRM
+- An OAuth2 Self Client registered in the [Zoho API Console](https://api-console.zoho.com/)
+- [Node.js](https://nodejs.org/) v18+ (developed on v26.7.0)
 - [Postman](https://www.postman.com/) (optional, used for manual API testing)
 
 ## 7. Environment Variables
 
-Sensitive credentials are stored in a `.env` file, which is **not included** in the project submission. Use `.env.example` as a template.
-
-Required variables:
+Sensitive credentials are stored in a `.env` file, which is **not included** in this submission. `.env.example` is provided as a template.
 
 | Variable | Description |
 |---|---|
@@ -150,11 +161,10 @@ Run it continuously with polling (checks WooCommerce every 60 seconds):
 ```bash
 node index.js --watch
 ```
-*(or however polling is triggered in your version of the script — e.g. `setInterval`/`node-cron` configured for a 60-second interval)*
 
 ## 11. Expected Output
 
-Console output for a successful run looks like:
+Console output for a successful run:
 
 ```
 Found 3 orders
@@ -167,30 +177,31 @@ Each order results in either a new Contact + Deal, or a reused Contact with the 
 
 ## 12. Testing & Verification
 
-The integration was tested with WooCommerce orders **#16, #17, and #18**:
+The integration was tested end-to-end using real WooCommerce orders and the live Zoho CRM API (no mock data):
 
 - **Order #18** — successfully created a new Deal in Zoho CRM and synchronized the customer Contact.
 - **Orders #16 and #17** — existing Deals were correctly detected and skipped, preventing duplicate Deals.
-- **Final verification** — both Contacts and Deals were confirmed present in Zoho CRM by checking the **Contacts** and **Deals** modules directly.
+- **Final verification** — Contacts and Deals were confirmed present directly in the Zoho CRM **Contacts** and **Deals** modules.
 
-Screenshots documenting each step are included in the `screenshots/` folder:
-- `woocommerce-order.png` — test order in the WooCommerce admin
-- `successful-sync.png` — console output of a successful sync run
-- `zoho-contact.png` — resulting Contact in Zoho CRM
-- `zoho-deal.png` — resulting Deal in Zoho CRM
+
+Screenshots demonstrating the successful integration are included in the `screenshots` directory.
+- `woocommerce-order.png` — WooCommerce test order.
+- `successful-sync.png` — Successful Node.js synchronization output.
+- `zoho-contact.png` — Customer Contact created/synchronized in Zoho CRM.
+- `zoho-deal.png` — Deal created in Zoho CRM from the WooCommerce order.
 
 ## 13. Automation
 
-- The script uses **polling** rather than webhooks, since the local WordPress site is not publicly reachable and Zoho cannot send real-time webhooks to it.
-- The script checks WooCommerce for new orders every **60 seconds**.
-- Duplicate-prevention logic (checking for an existing Deal per order number, and an existing Contact per email) makes it safe to run repeatedly without creating duplicate CRM records.
+- The script uses **polling** rather than webhooks, since the local WordPress site is not publicly reachable and Zoho cannot deliver real-time webhooks to it.
+- WooCommerce is checked for new orders every **60 seconds**.
+- Duplicate-prevention logic (checking for an existing Deal per order number, and an existing Contact per email) makes repeated runs safe without creating duplicate CRM records.
 
 ## 14. Security
 
-- All API credentials and OAuth tokens are stored in a local `.env` file, which is excluded from the project submission.
+- All API credentials and OAuth tokens are stored in a local `.env` file, excluded from this submission.
 - `.env.example` contains placeholder values only — no real keys or tokens.
 - No real customer passwords, payment details, or other sensitive personal information are used or stored anywhere in the project; all customer data is dummy/test data.
-- Zoho CRM access uses OAuth 2.0 rather than static credentials, and access tokens are short-lived (refreshed via the stored refresh token).
+- Zoho CRM access uses OAuth 2.0 rather than static credentials, and access tokens are short-lived, refreshed via the stored refresh token.
 
 ## 15. APIs Used
 
@@ -201,9 +212,9 @@ Screenshots documenting each step are included in the `screenshots/` folder:
 
 ## 16. Project Status
 
-**Status:** Complete and tested.
+**Status:** Complete — all task requirements met and verified.
 
-The integration successfully fetches WooCommerce orders, creates/reuses Zoho CRM Contacts, creates linked Deals, and prevents duplicate Deals on repeated runs. Verified end-to-end against orders #16–#18 with corresponding Contact and Deal records confirmed in Zoho CRM.
+The integration successfully fetches WooCommerce orders, creates/reuses Zoho CRM Contacts, creates linked Deals, and prevents duplicate Deals on repeated runs. Verified end-to-end against orders #16–#18, with corresponding Contact and Deal records confirmed in Zoho CRM.
 
 ---
 
@@ -218,3 +229,15 @@ The integration successfully fetches WooCommerce orders, creates/reuses Zoho CRM
 - Automatically checks WooCommerce for new orders.
 - Uses OAuth 2.0 for Zoho CRM API authentication.
 - Uses environment variables to protect sensitive credentials.
+
+---
+
+## What This Demonstrates
+
+In line with the task's learning objectives, this project demonstrates practical experience with:
+
+- **Working with REST APIs** — consuming the WooCommerce Orders API and the Zoho CRM Contacts/Deals APIs.
+- **OAuth2 / API tokens** — implementing the full OAuth2 authorization-code and refresh-token flow for Zoho CRM, alongside Basic Auth (Consumer Key/Secret) for WooCommerce.
+- **Data mapping and integration logic** — translating WooCommerce order fields (billing info, line items, total) into Zoho CRM Contact and Deal fields.
+- **CRM module structure** — working directly with the Contacts and Deals modules and their relationship (Deal → Contact_Name lookup).
+- **Testing integrations locally** — validating both APIs independently in Postman before writing the integration script, then testing the full flow against real local WooCommerce orders and the live Zoho CRM API.
