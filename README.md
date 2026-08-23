@@ -75,7 +75,7 @@ wc-zoho-integration/
     └── zoho-deal.png
 ```
 
-## 6. Requirements
+## 6. Prerequisites
 
 - [LocalWP](https://localwp.com/) installed, with a local WordPress site running
 - WooCommerce plugin installed and activated on that site
